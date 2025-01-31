@@ -437,6 +437,20 @@ cdef class gr_ctx(flint_ctx):
         """
         Returns `x + y`
 
+            >>> from flint.types._gr import gr_complex_acb_ctx, gr_real_arb_ctx
+            >>> arb = gr_real_arb_ctx.new(53); acb = gr_complex_acb_ctx.new(106)
+            >>> c = acb("2 + I").sqrt(); c
+            ([1.4553466902253548081226618397097 +/- 3.48e-32] + [0.3435607497225124641385657439146 +/- 5.23e-32]*I)
+            >>> x = arb(3); x
+            3.000000000000000
+            >>> arb.add(x, c)
+            Traceback (most recent call last):
+              ...
+            AssertionError: Cannot add x and y in this context
+            >>> acb.add(x, c)
+            ([4.455346690225354808122661839710 +/- 4.83e-31] + [0.3435607497225124641385657439146 +/- 5.23e-32]*I)
+            >>> arb.add(x, 5)
+            8.000000000000000
         """
         if isinstance(x, gr) and isinstance(y, gr):
             if x.ctx == self and y.ctx == self:
@@ -457,6 +471,24 @@ cdef class gr_ctx(flint_ctx):
         return self._add(self(x), self(y))
 
     def sub(self, x, y) -> gr:
+        """
+        Returns `x` - `y`.
+
+            >>> from flint.types._gr import gr_complex_acb_ctx, gr_real_arb_ctx
+            >>> arb = gr_real_arb_ctx.new(53); acb = gr_complex_acb_ctx.new(106)
+            >>> c = acb("2 + I").sqrt(); c
+            ([1.4553466902253548081226618397097 +/- 3.48e-32] + [0.3435607497225124641385657439146 +/- 5.23e-32]*I)
+            >>> x = arb(3); x
+            3.000000000000000
+            >>> arb.sub(x, c)
+            Traceback (most recent call last):
+              ...
+            AssertionError: Cannot sub x and y in this context
+            >>> acb.sub(x, c)
+            ([1.5446533097746451918773381602903 +/- 3.48e-32] + [-0.3435607497225124641385657439146 +/- 5.23e-32]*I)
+            >>> arb.sub(x, 5)
+            -2.000000000000000
+        """
         if isinstance(x, gr) and isinstance(y, gr):
             if x.ctx == self and y.ctx == self:
                 return self._sub(x, y)
@@ -476,6 +508,25 @@ cdef class gr_ctx(flint_ctx):
         return self._sub(self(x), self(y))
 
     def mul(self, x, y) -> gr:
+        """
+        Returns x * y.
+
+            >>> from flint.types._gr import gr_complex_acb_ctx, gr_real_arb_ctx
+            >>> arb = gr_real_arb_ctx.new(53); acb = gr_complex_acb_ctx.new(106)
+            >>> c = acb("2 + I").sqrt(); c
+            ([1.4553466902253548081226618397097 +/- 3.48e-32] + [0.3435607497225124641385657439146 +/- 5.23e-32]*I)
+            >>> x = arb(3); x
+            3.000000000000000
+            >>> arb.mul(x, c)
+            Traceback (most recent call last):
+              ...
+            AssertionError: Cannot mul x and y in this context
+            >>> acb.mul(x, c)
+            ([4.366040070676064424367985519129 +/- 2.12e-31] + [1.0306822491675373924156972317436 +/- 9.09e-32]*I)
+            >>> arb.mul(x, 5)
+            15.00000000000000
+        """
+
         if isinstance(x, gr) and isinstance(y, gr):
             if x.ctx == self and y.ctx == self:
                 return self._mul(x, y)
@@ -500,18 +551,48 @@ cdef class gr_ctx(flint_ctx):
     def is_invertible(self, x) -> bool | None:
         """
         Returns whether `x` has a multiplicative inverse in the present ring, i.e. whether `x` is a unit.
+
+            >>> from flint.types._gr import gr_fmpz_ctx, gr_complex_acb_ctx
+            >>> acb = gr_complex_acb_ctx.new(53); ZZ = gr_fmpz_ctx
+            >>> ZZ.is_invertible(1)
+            True
+            >>> ZZ.is_invertible(15)
+            False
+            >>> acb.is_invertible(0)
+            False
+            >>> acb.is_invertible(acb.sqrt(2))
+            True
         """
-        return self._is_invertible(self(x))
+        return truth_to_py(self._is_invertible(self(x)))
 
     def inv(self, x) -> gr:
         """
         Returns the multiplicative inverse of `x` in the present ring, if such an element exists.
+
+            >>> from flint.types._gr import gr_fmpz_ctx, gr_complex_acb_ctx
+            >>> acb = gr_complex_acb_ctx.new(106); ZZ = gr_fmpz_ctx
+            >>> ZZ.inv(-1)
+            -1
+            >>> acb.inv("pi")
+            [0.31830988618379067153776752674503 +/- 8.87e-33]
         """
         return self._inv(self(x))
 
     def div(self, x, y) -> gr:
         """
-        Returns the quotient `x/y`
+        Returns the quotient `x/y`.
+        This will fail when x is not divisible by y in the context.
+
+            >>> from flint.types._gr import gr_fmpz_ctx, gr_complex_acb_ctx
+            >>> acb = gr_complex_acb_ctx.new(53); ZZ = gr_fmpz_ctx
+            >>> acb.div(3, "pi * I")
+            [-0.954929658551372 +/- 1.97e-16]*I
+            >>> ZZ.div(15, 3)
+            5
+            >>> ZZ.div(6, 4)
+            Traceback (most recent call last):
+              ...
+            AssertionError: Cannot div x and y in this context
         """
         if isinstance(x, gr) and isinstance(y, gr):
             if x.ctx == self and y.ctx == self:
@@ -534,6 +615,16 @@ cdef class gr_ctx(flint_ctx):
     def divexact(self, x, y) -> gr:
         """
         Returns the quotient `x/y`, assuming that the quotient is exact in the current context.
+        If x is not divisible by y, the result is undefined.
+
+            >>> from flint.types._gr import gr_fmpz_ctx, gr_complex_acb_ctx
+            >>> acb = gr_complex_acb_ctx.new(53); ZZ = gr_fmpz_ctx
+            >>> acb.divexact(3, "pi * I")
+            [-0.954929658551372 +/- 1.97e-16]*I
+            >>> ZZ.divexact(15, 3)
+            5
+            >>> ZZ.divexact(6, 4)
+            1
         """
         if isinstance(x, gr) and isinstance(y, gr):
             if x.ctx == self and y.ctx == self:
@@ -556,6 +647,15 @@ cdef class gr_ctx(flint_ctx):
     def div_nonunique(self, x, y) -> gr:
         """
         Returns an arbitrary solution `q` of the equation `x = qy`.
+
+            >>> from flint.types._gr import gr_fmpz_mod_ctx
+            >>> ZN = gr_fmpz_mod_ctx.new(56)
+            >>> ZN.div(28, -7)
+            Traceback (most recent call last):
+                ...
+            AssertionError: Cannot div x and y in this context
+            >>> ZN.div_nonunique(28, -7)
+            52
         """
         return self._div_nonunique(self(x), self(y))
 
@@ -563,7 +663,7 @@ cdef class gr_ctx(flint_ctx):
         """
         Returns whether `d | x`; that is, whether there is an element `q` such that `x = qd`.
         """
-        return self._divides(self(d), self(x))
+        return truth_to_py(self._divides(self(d), self(x)))
 
     def euclidean_div(self, x, y) -> gr:
         return self._euclidean_div(self(x), self(y))
@@ -1815,8 +1915,8 @@ cdef class gr(flint_scalar):
         return self._neg()
 
     # XXX: Maybe +a should return a copy or for arb it should round...
-    # def __pos__(self) -> gr:
-    #     return self
+    def __pos__(self) -> gr:
+        return self.ctx.from_other(self)
 
     def __add__(self, other) -> gr:
         cdef gr other_gr

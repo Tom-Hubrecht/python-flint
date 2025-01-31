@@ -337,6 +337,10 @@ cdef class acb_poly(flint_poly):
         raise TypeError("cannot call acb_poly with input of type %s", type(t))
 
     def unique_fmpz_poly(self):
+        """
+        If `self` contains a unique integer polynomial, returns it.
+        Otherwise returns `None`.
+        """
         u = fmpz_poly.__new__(fmpz_poly)
         if acb_poly_get_unique_fmpz_poly((<fmpz_poly>u).val, self.val):
             return u

@@ -513,6 +513,13 @@ cdef class acb(flint_scalar):
         return u
 
     def union(s, t):
+        """
+        Returns a conplex interval containing both `s` and `t`.
+
+            >>> s = acb(1 + 1j); t = s.pow(1.125)
+            >>> s.union(t)
+            [1e+0 +/- 0.0632] + [1e+0 +/- 0.142]j
+        """
         v = acb.__new__(acb)
         t = any_as_acb(t)
         acb_union((<acb>v).val, (<acb>s).val, (<acb>t).val, getprec())

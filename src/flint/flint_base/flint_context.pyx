@@ -13,6 +13,28 @@ cdef class FlintContext:
         self.default()
 
     def default(self):
+        """
+        Restores the context to its initial values.
+
+            >>> from flint import ctx
+            >>> ctx.prec = 76
+            >>> ctx.pretty = False
+            >>> ctx.unicode = True
+            >>> ctx
+            pretty = False     # pretty-print repr() output
+            unicode = True     # use unicode characters in output
+            prec = 76          # real/complex precision (in bits)
+            dps = 22           # real/complex precision (in digits)
+            cap = 10           # power series precision
+            threads = 1        # max number of threads used internally
+            >>> ctx.default(); ctx
+            pretty = True      # pretty-print repr() output
+            unicode = False    # use unicode characters in output
+            prec = 53          # real/complex precision (in bits)
+            dps = 15           # real/complex precision (in digits)
+            cap = 10           # power series precision
+            threads = 1        # max number of threads used internally
+        """
         self.pretty = True
         self.rnd = arf_rnd_t.ARF_RND_DOWN
         self.prec = 53
